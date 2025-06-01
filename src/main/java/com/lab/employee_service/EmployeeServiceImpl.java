@@ -12,13 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.IanaLinkRelations;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.lab.employee_service.exceptions.ResourceNotFoundException;
 
-import feign.FeignException;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -29,9 +27,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     private EmployeeRepository repository;
     @Autowired
     private EmployeeModelAssembler assembler;
-    @Autowired
-    private DepartmentClient departmentClient;
-
     @Override
     public CollectionModel<EntityModel<EmployeeDTO>> findAll() {
         List<EntityModel<EmployeeDTO>> employees = repository.findAll().stream() //
@@ -45,10 +40,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<?> newEmployee(EmployeeDTO newEmployee) {
-        ResponseEntity<?> validationResponse = validateDepartment(newEmployee.getDepartmentId());
-        if (validationResponse != null) {
-            return validationResponse;
-        }
 
         Employee employee = EmployeeMapper.toEntity(newEmployee);
         employee = repository.save(employee);
@@ -76,17 +67,13 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public ResponseEntity<?> save(EmployeeDTO newEmployee, Long id) {
-        ResponseEntity<?> validationResponse = validateDepartment(newEmployee.getDepartmentId());
-        if (validationResponse != null) {
-            return validationResponse;
-        }
+
         Employee newEmploye = EmployeeMapper.toEntity(newEmployee);
         Employee updatedEmployee = repository.findById(id) //
                 .map(employee -> {
                     employee.setName(newEmployee.getName());
                     employee.setRole(newEmployee.getRole());
                     employee.setEmail(newEmployee.getEmail());
-                    employee.setDepartmentId(newEmployee.getDepartmentId());
                     return repository.save(employee);
                 }) //
                 .orElseGet(() -> {
@@ -106,17 +93,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         return ResponseEntity.noContent().build();
     }
 
-    private ResponseEntity<?> validateDepartment(Long departmentId) {
-        try {
-            departmentClient.one(departmentId).getContent();
-            return null; // No error, validation passed
-        } catch (FeignException e) {
-            log.error("Error calling department-service: {}", e.getMessage());
-            if (e.status() == 404) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Department not found");
-            }
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Department service is unavailable");
-        }
-    }
+
 
 }

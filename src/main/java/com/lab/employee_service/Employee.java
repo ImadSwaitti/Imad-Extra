@@ -13,10 +13,7 @@ public class Employee {
   private String name;
   private String role;
   private String email;
-  //foregin key
-  private Long departmentId;
-  //foregin key
-  private Long userId;
+ 
 
   public Employee() {
   }
