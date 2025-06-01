@@ -43,6 +43,16 @@ jobs:
       - name: Run unit tests
         run: mvn test -q
 
+      - name: Run Checkstyle (Static Code Analysis)
+        run: |
+          mvn checkstyle:checkstyle -Dcheckstyle.config.location=src/main/java/com/lab/employee_service/config/checkstyle.xml
+
+      - name: Upload Checkstyle Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: checkstyle-report
+          path: target/checkstyle-result.xml
+
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
